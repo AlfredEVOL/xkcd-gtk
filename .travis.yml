@@ -34,13 +34,25 @@ jobs:
     - stage: check
 
   include:
-    - stage: check
+    - &check
+      stage: check
+      go: "1.10.x"
       script:
         - make check
+    - <<: *check
+      go: "1.11.x"
+    - <<: *check
+      go: "1.x"
 
-    - stage: test
+    - &test
+      stage: test
+      go: "1.10.x"
       script:
         - make test BUILDFLAGS=-v
+    - <<: *test
+      go: "1.11.x"
+    - <<: *test
+      go: "1.x"
 
     - stage: package
       name: "Houston CI"
