@@ -1,5 +1,11 @@
 ---
 
+language: go
+go:
+  - "1.10.x"  # ubuntu bionic
+  - "1.11.x"  # debian buster
+  - "1.x"     # latest
+
 dist: bionic
 
 addons:
@@ -11,42 +17,29 @@ addons:
       - libxml2-utils
       - yamllint
 
+stages:
+  - build
+  - check
+  - test
+  - package
+
+stage: build
+install:
+  - make deps BUILDFLAGS=-v
+script:
+  - make BUILDFLAGS=-v
+
 jobs:
   allow_failures:
     - language: node_js
     - stage: check
 
   include:
-    - stage: build
-      language: go
-      go:
-        - "1.10.x"  # ubuntu bionic
-        - "1.11.x"  # debian buster
-        - "1.x"     # latest
-      install:
-        - make deps BUILDFLAGS=-v
-      script:
-        - make BUILDFLAGS=-v
-
     - stage: check
-      language: go
-      go:
-        - "1.10.x"  # ubuntu bionic
-        - "1.11.x"  # debian buster
-        - "1.x"     # latest
-      install:
-        - make deps BUILDFLAGS=-v
       script:
         - make check
 
     - stage: test
-      language: go
-      go:
-        - "1.10.x"  # ubuntu bionic
-        - "1.11.x"  # debian buster
-        - "1.x"     # latest
-      install:
-        - make deps BUILDFLAGS=-v
       script:
         - make test BUILDFLAGS=-v
 
