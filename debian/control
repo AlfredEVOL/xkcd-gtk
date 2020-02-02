@@ -4,6 +4,7 @@ Priority: extra
 Maintainer: Ryan Koesters <rmkoesters@gmail.com>
 Build-Depends: debhelper (>= 9),
                golang (>= 1.9),
+               golint,
                git,
                ca-certificates,
                libgtk-3-dev (>= 3.20)
