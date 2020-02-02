@@ -23,7 +23,6 @@ stages:
   - test
   - package
 
-stage: build
 install:
   - make deps BUILDFLAGS=-v
 script:
