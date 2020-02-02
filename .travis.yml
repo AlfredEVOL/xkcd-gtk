@@ -20,17 +20,23 @@ addons:
 install:
   - make deps BUILDFLAGS=-v
 
-script:
-  - make BUILDFLAGS=-v
-  - make check
-  - make test BUILDFLAGS=-v
-
 jobs:
   allow_failures:
     - language: node_js
+    - stage: check
 
   include:
-    - name: "Houston CI"
+    - stage: build
+      script: make BUILDFLAGS=-v
+
+    - stage: check
+      script: make check
+
+    - stage: test
+      script: make test BUILDFLAGS=-v
+
+    - stage: package
+      name: "Houston CI"
       language: node_js
       node_js: 10/*
       services:
