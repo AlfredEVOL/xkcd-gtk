@@ -17,6 +17,10 @@ addons:
       - libxml2-utils
       - yamllint
 
+cache:
+  directories:
+    - "/home/travis/gopath"
+
 stages:
   - build
   - check
