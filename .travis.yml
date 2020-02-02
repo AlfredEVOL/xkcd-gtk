@@ -1,11 +1,5 @@
 ---
 
-language: go
-go:
-  - "1.10.x"  # ubuntu bionic
-  - "1.11.x"  # debian buster
-  - "1.x"     # latest
-
 dist: bionic
 
 addons:
@@ -17,9 +11,6 @@ addons:
       - libxml2-utils
       - yamllint
 
-install:
-  - make deps BUILDFLAGS=-v
-
 jobs:
   allow_failures:
     - language: node_js
@@ -27,13 +18,37 @@ jobs:
 
   include:
     - stage: build
-      script: make BUILDFLAGS=-v
+      language: go
+      go:
+        - "1.10.x"  # ubuntu bionic
+        - "1.11.x"  # debian buster
+        - "1.x"     # latest
+      install:
+        - make deps BUILDFLAGS=-v
+      script:
+        - make BUILDFLAGS=-v
 
     - stage: check
-      script: make check
+      language: go
+      go:
+        - "1.10.x"  # ubuntu bionic
+        - "1.11.x"  # debian buster
+        - "1.x"     # latest
+      install:
+        - make deps BUILDFLAGS=-v
+      script:
+        - make check
 
     - stage: test
-      script: make test BUILDFLAGS=-v
+      language: go
+      go:
+        - "1.10.x"  # ubuntu bionic
+        - "1.11.x"  # debian buster
+        - "1.x"     # latest
+      install:
+        - make deps BUILDFLAGS=-v
+      script:
+        - make test BUILDFLAGS=-v
 
     - stage: package
       name: "Houston CI"
