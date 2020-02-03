@@ -17,4 +17,4 @@ override_dh_auto_build:
 
 override_dh_auto_test:
 	cd $(PACKAGE_ROOT) && GOPATH=$(GOPATH) make check
-	cd $(PACKAGE_ROOT) && GOPATH=$(GOPATH) make test
+	cd $(PACKAGE_ROOT) && GOPATH=$(GOPATH) make test DEVFLAGS=
