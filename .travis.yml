@@ -19,7 +19,9 @@ addons:
 
 cache:
   directories:
-    - "/home/travis/gopath/pkg"
+    - "$GOPATH"
+before_cache:
+  - rm -rf "$GOPATH/src/github.com/rkoesters/xkcd-gtk"
 
 stages:
   - build
@@ -42,6 +44,7 @@ jobs:
     - &check
       stage: check
       go: "1.10.x"
+      install: skip
       script:
         - make check
     - <<: *check
@@ -52,6 +55,7 @@ jobs:
     - &test
       stage: test
       go: "1.10.x"
+      install: skip
       script:
         - make test BUILDFLAGS=-v
     - <<: *test
