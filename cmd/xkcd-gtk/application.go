@@ -3,6 +3,9 @@ package main
 import (
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/rkoesters/xkcd-gtk/internal/bookmarks"
+	"github.com/rkoesters/xkcd-gtk/internal/cache"
+	"github.com/rkoesters/xkcd-gtk/internal/search"
 	"log"
 )
 
@@ -20,7 +23,7 @@ type Application struct {
 	actions     map[string]*glib.SimpleAction
 
 	settings  Settings
-	bookmarks Bookmarks
+	bookmarks bookmarks.List
 }
 
 // NewApplication creates an instance of our GTK Application.
@@ -79,27 +82,28 @@ func NewApplication() (*Application, error) {
 
 // SetupCache initializes the comic cache and the search index.
 func (app *Application) SetupCache() {
-	err := initComicCache()
+	err := cache.Init(search.Index)
 	if err != nil {
 		log.Print("error initializing comic cache: ", err)
 	}
 
-	err = initSearchIndex()
+	err = search.Init()
 	if err != nil {
 		log.Print("error initializing search index: ", err)
 	}
 
-	app.LoadSearchIndex()
+	// Asynchronously fill the comic metadata cache and search index.
+	search.Load(app.application)
 }
 
 // CloseCache closes the search index and comic cache.
 func (app *Application) CloseCache() {
-	err := closeSearchIndex()
+	err := search.Close()
 	if err != nil {
 		log.Print("error closing search index: ", err)
 	}
 
-	err = closeComicCache()
+	err = cache.Close()
 	if err != nil {
 		log.Print("error closing comic cache: ", err)
 	}

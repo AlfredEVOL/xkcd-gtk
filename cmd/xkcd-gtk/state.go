@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/rkoesters/xkcd-gtk/internal/cache"
+	"github.com/rkoesters/xkcd-gtk/internal/paths"
 	"io"
 	"log"
 	"os"
@@ -28,7 +30,7 @@ type WindowState struct {
 }
 
 func (ws *WindowState) loadDefaults() {
-	newestComic, _ := GetNewestComicInfo()
+	newestComic, _ := cache.NewestComicInfo()
 	ws.ComicNumber = newestComic.Num
 	ws.Maximized = false
 	ws.Height = 500
@@ -95,12 +97,12 @@ func (win *Window) SaveState() {
 		win.state.PropertiesPositionX, win.state.PropertiesPositionY = win.properties.dialog.GetPosition()
 	}
 
-	err := win.state.WriteFile(getWindowStatePath())
+	err := win.state.WriteFile(windowStatePath())
 	if err != nil {
 		log.Printf("error saving window state: %v", err)
 	}
 }
 
-func getWindowStatePath() string {
-	return filepath.Join(CacheDir(), "state")
+func windowStatePath() string {
+	return filepath.Join(paths.CacheDir(), "state")
 }

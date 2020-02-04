@@ -3,6 +3,8 @@
 ################################################################################
 
 BUILDFLAGS =
+DEVFLAGS   = -race
+TESTFLAGS  = -cover
 LDFLAGS    = -ldflags="-X main.appVersion=$(APP_VERSION)"
 POTFLAGS   = --from-code=utf-8 -kl --package-name="$(APP)"
 
@@ -51,15 +53,6 @@ MO       = $(patsubst %.po,%.mo,$(PO))
 APP_VERSION = $(shell tools/app-version.sh)
 GTK_VERSION = $(shell tools/gtk-version.sh)
 
-# If GOPATH isn't set, then use the current directory. NOTE: Calling 'make test'
-# while using the current directory will run the tests for everything in GOPATH.
-ifeq "$(shell go env GOPATH)" ""
-export GOPATH = $(shell pwd)
-endif
-ifeq "$(shell go env GOPATH)" "/nonexistent/go"
-export GOPATH = $(shell pwd)
-endif
-
 ################################################################################
 # Targets
 ################################################################################
@@ -71,6 +64,9 @@ deps:
 
 $(EXE_PATH): Makefile $(SOURCES)
 	go build -o $@ $(BUILDFLAGS) $(LDFLAGS) ./cmd/xkcd-gtk
+
+dev: $(GEN_SOURCES)
+	go build -o $(EXE_PATH)-dev $(BUILDFLAGS) $(LDFLAGS) $(DEVFLAGS) ./cmd/xkcd-gtk
 
 $(POT_PATH): $(POTFILES)
 	xgettext -o $@ $(POTFLAGS) $^
@@ -96,17 +92,17 @@ fix: $(GEN_SOURCES)
 
 check: $(GEN_SOURCES) $(APPDATA_PATH)
 	go vet ./...
-	golint ./...
+	golint -set_exit_status ./...
 	xmllint --noout $(APPDATA_PATH) $(ICON_PATH) $(UI_SOURCES)
 	yamllint .
 	appstream-util validate-relax $(APPDATA_PATH)
 
 test: $(GEN_SOURCES)
-	go test -cover $(BUILDFLAGS) ./...
+	go test $(BUILDFLAGS) $(DEVFLAGS) $(TESTFLAGS) ./...
 	tools/test-install.sh
 
 clean:
-	rm -f $(EXE_PATH) $(GEN_SOURCES) $(DESKTOP_PATH) $(APPDATA_PATH) $(MO)
+	rm -f $(EXE_PATH) $(EXE_PATH)-dev $(GEN_SOURCES) $(DESKTOP_PATH) $(APPDATA_PATH) $(MO)
 
 strip: $(EXE_PATH)
 	strip $(EXE_PATH)
@@ -134,4 +130,4 @@ uninstall:
 		rm "$(DESTDIR)$(datadir)/locale/$$lang/LC_MESSAGES/$(APP).mo"; \
 	done
 
-.PHONY: all check clean deps fix install strip test uninstall
+.PHONY: all check clean deps dev fix install strip test uninstall

@@ -58,7 +58,7 @@ jobs:
       go: "1.10.x"
       install: skip
       script:
-        - make test BUILDFLAGS=-v
+        - make test
     - <<: *test
       go: "1.11.x"
     - <<: *test

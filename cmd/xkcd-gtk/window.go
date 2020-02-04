@@ -6,6 +6,7 @@ import (
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/rkoesters/xkcd"
+	"github.com/rkoesters/xkcd-gtk/internal/cache"
 	"log"
 	"math"
 	"math/rand"
@@ -23,7 +24,7 @@ type Window struct {
 	state  WindowState
 
 	comic      *xkcd.Comic
-	comicMutex sync.Mutex
+	comicMutex sync.RWMutex
 
 	actions map[string]*glib.SimpleAction
 	accels  *gtk.AccelGroup
@@ -69,7 +70,9 @@ func NewWindow(app *Application) (*Window, error) {
 		return nil, err
 	}
 
+	win.comicMutex.Lock()
 	win.comic = &xkcd.Comic{Title: appName}
+	win.comicMutex.Unlock()
 
 	// Initialize our window actions.
 	win.actions = make(map[string]*glib.SimpleAction)
@@ -387,7 +390,7 @@ func NewWindow(app *Application) (*Window, error) {
 	win.window.Add(win.comicContainer)
 
 	// Recall our window state.
-	win.state.ReadFile(getWindowStatePath())
+	win.state.ReadFile(windowStatePath())
 	win.window.Resize(win.state.Width, win.state.Height)
 	if win.state.PositionX != 0 && win.state.PositionY != 0 {
 		win.window.Move(win.state.PositionX, win.state.PositionY)
@@ -410,12 +413,12 @@ func (win *Window) FirstComic() {
 
 // PreviousComic sets the current comic to the previous comic.
 func (win *Window) PreviousComic() {
-	win.SetComic(win.comic.Num - 1)
+	win.SetComic(win.comicNumber() - 1)
 }
 
 // NextComic sets the current comic to the next comic.
 func (win *Window) NextComic() {
-	win.SetComic(win.comic.Num + 1)
+	win.SetComic(win.comicNumber() + 1)
 }
 
 // NewestComic checks for a new comic and then shows the newest comic to the
@@ -424,9 +427,7 @@ func (win *Window) NewestComic() {
 	// Make it clear that we are checking for a new comic.
 	win.header.SetTitle(l("Checking for new comic..."))
 
-	// Force GetNewestComicInfo to check for a new comic.
-	setCachedNewestComic <- nil
-	newestComic, err := GetNewestComicInfo()
+	newestComic, err := cache.NewestComicInfoSkipCache()
 	if err != nil {
 		log.Print("error jumping to newest comic: ", err)
 	}
@@ -442,7 +443,7 @@ func (win *Window) RandomComic() {
 		return          // guaranteed to be random.
 	}
 
-	newestComic, _ := GetNewestComicInfo()
+	newestComic, _ := cache.NewestComicInfo()
 	if newestComic.Num <= 0 {
 		win.SetComic(newestComic.Num)
 	} else {
@@ -469,14 +470,14 @@ func (win *Window) SetComic(n int) {
 		win.comicMutex.Lock()
 		defer win.comicMutex.Unlock()
 
-		win.comic, err = GetComicInfo(n)
+		win.comic, err = cache.ComicInfo(n)
 		if err != nil {
 			log.Printf("error downloading comic info: %v", n)
 		} else {
-			_, err = os.Stat(getComicImagePath(n))
+			_, err = os.Stat(cache.ComicImagePath(n))
 			if os.IsNotExist(err) {
 				win.image.SetFromIconName("image-loading-symbolic", gtk.ICON_SIZE_DIALOG)
-				err = DownloadComicImage(n)
+				err = cache.DownloadComicImage(n)
 				if err != nil {
 					// We can be sneaky, we use SafeTitle
 					// for window title, but we can leave
@@ -497,6 +498,9 @@ func (win *Window) SetComic(n int) {
 
 // DisplayComic updates the UI to show the contents of win.comic.
 func (win *Window) DisplayComic() {
+	win.comicMutex.RLock()
+	defer win.comicMutex.RUnlock()
+
 	win.header.SetTitle(win.comic.SafeTitle)
 	win.header.SetSubtitle(strconv.Itoa(win.comic.Num))
 	win.image.SetTooltipText(win.comic.Alt)
@@ -541,7 +545,7 @@ func (win *Window) DrawComic() {
 	}
 
 	// Load the comic image.
-	win.image.SetFromFile(getComicImagePath(win.comic.Num))
+	win.image.SetFromFile(cache.ComicImagePath(win.comicNumber()))
 
 	if darkMode {
 		// Apply the dark style class to the comic container.
@@ -564,17 +568,19 @@ func (win *Window) DrawComic() {
 }
 
 func (win *Window) updateNextPreviousButtonStatus() {
+	n := win.comicNumber()
+
 	// Enable/disable previous button.
-	if win.comic.Num > 1 {
+	if n > 1 {
 		win.actions["previous-comic"].SetEnabled(true)
 	} else {
 		win.actions["previous-comic"].SetEnabled(false)
 	}
 
 	// Enable/disable next button.
-	newest, _ := GetNewestComicInfoAsync(func(c *xkcd.Comic, _ error) {
+	newest, _ := cache.NewestComicInfoAsync(func(c *xkcd.Comic, _ error) {
 		if c != nil {
-			if win.comic.Num < c.Num {
+			if win.comicNumber() < c.Num {
 				glib.IdleAdd(func() {
 					win.actions["next-comic"].SetEnabled(true)
 				})
@@ -585,7 +591,7 @@ func (win *Window) updateNextPreviousButtonStatus() {
 			}
 		}
 	})
-	if win.comic.Num < newest.Num {
+	if n < newest.Num {
 		win.actions["next-comic"].SetEnabled(true)
 	} else {
 		win.actions["next-comic"].SetEnabled(false)
@@ -594,12 +600,25 @@ func (win *Window) updateNextPreviousButtonStatus() {
 
 // Explain opens a link to explainxkcd.com in the user's web browser.
 func (win *Window) Explain() {
-	openURL(fmt.Sprintf("https://www.explainxkcd.com/%v/", win.comic.Num))
+	openURL(fmt.Sprintf("https://www.explainxkcd.com/%v/", win.comicNumber()))
 }
 
 // OpenLink opens the comic's Link in the user's web browser.
 func (win *Window) OpenLink() {
-	openURL(win.comic.Link)
+	win.comicMutex.RLock()
+	link := win.comic.Link
+	win.comicMutex.RUnlock()
+
+	openURL(link)
+}
+
+// comicNumber returns the number of the current comic in a thread-safe way. Do
+// not call this method if you already hold win.comicMutex.
+func (win *Window) comicNumber() int {
+	win.comicMutex.RLock()
+	defer win.comicMutex.RUnlock()
+
+	return win.comic.Num
 }
 
 // Destroy releases all references in the Window struct. This is needed to
