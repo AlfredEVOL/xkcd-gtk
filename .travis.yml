@@ -19,10 +19,7 @@ addons:
 
 cache:
   directories:
-    - "$GOPATH"
     - "$GOCACHE"
-before_cache:
-  - rm -rf "$GOPATH/src/github.com/rkoesters/xkcd-gtk"
 
 stages:
   - build
