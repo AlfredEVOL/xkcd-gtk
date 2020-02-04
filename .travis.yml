@@ -29,7 +29,7 @@ stages:
 
 stage: build
 install:
-  - make deps BUILDFLAGS=-v
+  - make deps BUILDFLAGS="-v -d"
 script:
   - make BUILDFLAGS=-v
 
@@ -42,7 +42,6 @@ jobs:
     - &check
       stage: check
       go: "1.10.x"
-      install: skip
       script:
         - make check
     - <<: *check
@@ -53,7 +52,6 @@ jobs:
     - &test
       stage: test
       go: "1.10.x"
-      install: skip
       script:
         - make test
     - <<: *test
