@@ -37,7 +37,6 @@ jobs:
     - name: Houston CI
       language: node_js
       node_js: 10/*
-      go:  # Unset Go version. Houston CI will use its own version of Go.
       services:
         - docker
       addons:
