@@ -19,7 +19,7 @@ addons:
 
 cache:
   directories:
-    - "/home/travis/.cache/go-build"
+    - "$HOME/.cache/go-build"
 
 stages:
   - build
