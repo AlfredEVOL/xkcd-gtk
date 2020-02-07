@@ -32,9 +32,9 @@ jobs:
         - make deps BUILDFLAGS="-v -d"
       script:
         - make BUILDFLAGS=-v
-    - &build
+    - <<: *build
       go: "1.11.x"
-    - &build
+    - <<: *build
       go: "1.x"
 
     - &check
