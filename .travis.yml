@@ -1,37 +1,10 @@
 ---
 
-language: go
-go:
-  - "1.10.x"  # ubuntu bionic
-  - "1.11.x"  # debian buster
-  - "1.x"     # latest
-
-dist: bionic
-
-addons:
-  apt:
-    packages:
-      - appstream-util
-      - golint
-      - libgtk-3-dev
-      - libxml2-utils
-      - yamllint
-
-cache:
-  directories:
-    - $HOME/.cache/go-build
-
 stages:
   - build
   - check
   - test
   - package
-
-stage: build
-install:
-  - make deps BUILDFLAGS="-v -d"
-script:
-  - make BUILDFLAGS=-v
 
 jobs:
   allow_failures:
@@ -39,7 +12,33 @@ jobs:
     - stage: check
 
   include:
+    - &build
+      stage: build
+      dist: bionic
+      language: go
+      go: "1.10.x"
+      addons:
+        apt:
+          packages:
+            - appstream-util
+            - golint
+            - libgtk-3-dev
+            - libxml2-utils
+            - yamllint
+      cache:
+        directories:
+          - $HOME/.cache/go-build
+      install:
+        - make deps BUILDFLAGS="-v -d"
+      script:
+        - make BUILDFLAGS=-v
+    - &build
+      go: "1.11.x"
+    - &build
+      go: "1.x"
+
     - &check
+      <<: *build
       stage: check
       go: "1.10.x"
       script:
@@ -50,6 +49,7 @@ jobs:
       go: "1.x"
 
     - &test
+      <<: *build
       stage: test
       go: "1.10.x"
       script:
@@ -61,6 +61,7 @@ jobs:
 
     - stage: package
       name: Houston CI
+      dist: bionic
       language: node_js
       node_js: 10/*
       services:
