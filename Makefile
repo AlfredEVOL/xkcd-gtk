@@ -6,7 +6,7 @@ BUILDFLAGS =
 DEVFLAGS   = -race
 TESTFLAGS  = -cover
 LDFLAGS    = -ldflags="-X main.appVersion=$(APP_VERSION)"
-POTFLAGS   = --from-code=utf-8 -kl --package-name="$(APP)"
+POTFLAGS   = --package-name="$(APP)" --from-code=utf-8 --sort-output
 
 ################################################################################
 # Install Variables
@@ -45,10 +45,17 @@ GEN_SOURCES = $(patsubst %,%.go,$(CSS_SOURCES) $(UI_SOURCES))
 SOURCES     = $(GO_SOURCES) $(GEN_SOURCES)
 IMPORTS     = $(shell tools/list-imports.sh ./...)
 
-POTFILES = $(shell cat po/POTFILES)
-LINGUAS  = $(shell cat po/LINGUAS)
-PO       = $(shell find po -name '*.po' -type f)
-MO       = $(patsubst %.po,%.mo,$(PO))
+DEV_PATH = $(EXE_PATH)-dev
+
+POTFILES         = $(shell cat po/POTFILES)
+POTFILES_GO      = $(filter %.go,$(POTFILES))
+POTFILES_UI      = $(filter %.ui,$(POTFILES))
+POTFILES_DESKTOP = $(filter %.desktop.in,$(POTFILES))
+POTFILES_APPDATA = $(filter %.xml.in,$(POTFILES))
+
+LINGUAS = $(shell cat po/LINGUAS)
+PO      = $(shell find po -name '*.po' -type f)
+MO      = $(patsubst %.po,%.mo,$(PO))
 
 APP_VERSION = $(shell tools/app-version.sh)
 GTK_VERSION = $(shell tools/gtk-version.sh)
@@ -66,16 +73,21 @@ $(EXE_PATH): Makefile $(SOURCES)
 	go build -o $@ $(BUILDFLAGS) $(LDFLAGS) ./cmd/xkcd-gtk
 
 dev: $(GEN_SOURCES)
-	go build -o $(EXE_PATH)-dev $(BUILDFLAGS) $(LDFLAGS) $(DEVFLAGS) ./cmd/xkcd-gtk
-
-$(POT_PATH): $(POTFILES)
-	xgettext -o $@ $(POTFLAGS) $^
+	go build -o $(DEV_PATH) $(BUILDFLAGS) $(LDFLAGS) $(DEVFLAGS) ./cmd/xkcd-gtk
 
 %.css.go: %.css
 	tools/go-wrap.sh $< >$@
 
 %.ui.go: %.ui
 	tools/go-wrap.sh $< >$@
+
+$(POT_PATH): $(POTFILES) tools/fill-pot-header.sh
+	xgettext -o $@ -LC -kl $(POTFLAGS) $(POTFILES_GO)
+	xgettext -o $@ -j $(POTFLAGS) $(POTFILES_UI)
+	xgettext -o $@ -j -k -kName -kGenericName -kComment -kKeywords $(POTFLAGS) $(POTFILES_DESKTOP)
+	xgettext -o $@ -j --its=po/appdata.its $(POTFLAGS) $(POTFILES_APPDATA)
+	tools/fill-pot-header.sh <$@ >$@.out
+	mv $@.out $@
 
 %.desktop: %.desktop.in $(PO)
 	msgfmt --desktop -d po -c -o $@ --template $<
@@ -95,14 +107,14 @@ check: $(GEN_SOURCES) $(APPDATA_PATH)
 	golint -set_exit_status ./...
 	xmllint --noout $(APPDATA_PATH) $(ICON_PATH) $(UI_SOURCES)
 	yamllint .
-	appstream-util validate-relax $(APPDATA_PATH)
+	-appstream-util validate-relax $(APPDATA_PATH)
 
 test: $(GEN_SOURCES)
 	go test $(BUILDFLAGS) $(DEVFLAGS) $(TESTFLAGS) ./...
 	tools/test-install.sh
 
 clean:
-	rm -f $(EXE_PATH) $(EXE_PATH)-dev $(GEN_SOURCES) $(DESKTOP_PATH) $(APPDATA_PATH) $(MO)
+	rm -f $(EXE_PATH) $(DEV_PATH) $(GEN_SOURCES) $(DESKTOP_PATH) $(APPDATA_PATH) $(MO)
 
 strip: $(EXE_PATH)
 	strip $(EXE_PATH)

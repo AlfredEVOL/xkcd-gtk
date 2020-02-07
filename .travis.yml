@@ -19,7 +19,7 @@ addons:
 
 cache:
   directories:
-    - "$HOME/.cache/go-build"
+    - $HOME/.cache/go-build
 
 stages:
   - build
@@ -60,7 +60,7 @@ jobs:
       go: "1.x"
 
     - stage: package
-      name: "Houston CI"
+      name: Houston CI
       language: node_js
       node_js: 10/*
       services:
@@ -68,7 +68,7 @@ jobs:
       addons:
         apt:
           sources:
-            - sourceline: "ppa:ubuntu-toolchain-r/test"
+            - ubuntu-toolchain-r-test
           packages:
             - libstdc++-5-dev
       install:
