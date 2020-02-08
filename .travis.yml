@@ -1,5 +1,7 @@
 ---
 
+language: go
+
 stages:
   - build
   - check
