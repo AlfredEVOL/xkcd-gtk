@@ -1,21 +1,12 @@
 #!/usr/bin/make -f
-GOPATH = /tmp/gopath
-PACKAGE_ROOT = $(GOPATH)/src/github.com/rkoesters/xkcd-gtk
 
 %:
 	dh $@ 
 
-# Setup GOPATH and create a symlink so importing Go packages within our repo
-# works correctly.
-override_dh_auto_configure:
-	mkdir -p $(shell dirname $(PACKAGE_ROOT))
-	ln -s $(shell pwd) $(PACKAGE_ROOT)
-
 override_dh_auto_build:
-	cd $(PACKAGE_ROOT) && GOPATH=$(GOPATH) make deps
-	cd $(PACKAGE_ROOT) && GOPATH=$(GOPATH) make
+	cd $(PACKAGE_ROOT) && make
 
 override_dh_auto_test:
-	cd $(PACKAGE_ROOT) && GOPATH=$(GOPATH) make check
+	cd $(PACKAGE_ROOT) && make check
 	# Houston CI doesn't support the `-race` flag, so unset it.
-	cd $(PACKAGE_ROOT) && GOPATH=$(GOPATH) make test DEVFLAGS=
+	cd $(PACKAGE_ROOT) && make test DEVFLAGS=
