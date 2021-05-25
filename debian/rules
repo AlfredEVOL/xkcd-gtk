@@ -4,9 +4,9 @@
 	dh $@ 
 
 override_dh_auto_build:
-	cd $(PACKAGE_ROOT) && make
+	make
 
 override_dh_auto_test:
-	cd $(PACKAGE_ROOT) && make check
+	make check
 	# Houston CI doesn't support the `-race` flag, so unset it.
-	cd $(PACKAGE_ROOT) && make test DEVFLAGS=
+	make test DEVFLAGS=
