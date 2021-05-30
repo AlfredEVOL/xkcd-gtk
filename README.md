@@ -12,7 +12,7 @@ GTK+3.
 
 ### Requirements
 
-To build this program, you will need Go (version >= 1.13, something like
+To build this program, you will need Go (version >= 1.11, something like
 `golang` or `go`) and GTK+ development files (version >= 3.20, something like
 `libgtk-3-dev` or `gtk3-devel`).
 
@@ -49,7 +49,7 @@ To uninstall for all users:
 $ sudo make uninstall prefix=/usr/local
 ```
 
-To uninstall for the current user :
+To uninstall for the current user:
 
 ```shell
 $ make uninstall prefix="$HOME/.local"
