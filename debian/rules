@@ -4,9 +4,11 @@
 	dh $@ 
 
 override_dh_auto_build:
-	make
+	PATH="/usr/lib/go-1.13/bin:${PATH}" go mod vendor
+	rm vendor/github.com/gotk3/gotk3/gtk/gtk_since_3_24.go
+	PATH="/usr/lib/go-1.13/bin:${PATH}" make BUILDFLAGS=-mod=vendor
 
 override_dh_auto_test:
-	make check
+	PATH="/usr/lib/go-1.13/bin:${PATH}" make check BUILDFLAGS=-mod=vendor
 	# Houston CI doesn't support the `-race` flag, so unset it.
-	make test DEVFLAGS=
+	PATH="/usr/lib/go-1.13/bin:${PATH}" make test DEVFLAGS= BUILDFLAGS=-mod=vendor
