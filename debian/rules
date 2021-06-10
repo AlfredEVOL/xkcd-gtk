@@ -4,11 +4,11 @@
 	dh $@ 
 
 override_dh_auto_build:
-	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE=build/ go mod vendor
+	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE="$(shell pwd)/build/" go mod vendor
 	rm vendor/github.com/gotk3/gotk3/gtk/gtk_since_3_24.go
-	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE=build/ make BUILDFLAGS=-mod=vendor
+	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE="$(shell pwd)/build/" make BUILDFLAGS=-mod=vendor
 
 override_dh_auto_test:
-	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE=build/ make check BUILDFLAGS=-mod=vendor
+	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE="$(shell pwd)/build/" make check BUILDFLAGS=-mod=vendor
 	# Houston CI doesn't support the `-race` flag, so unset it.
-	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE=build/ make test DEVFLAGS= BUILDFLAGS=-mod=vendor
+	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE="$(shell pwd)/build/" make test DEVFLAGS= BUILDFLAGS=-mod=vendor
