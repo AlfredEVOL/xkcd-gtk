@@ -6,6 +6,7 @@
 override_dh_auto_build:
 	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE="$(shell pwd)/build/" GOPATH="$(shell pwd)/build/" go mod vendor
 	rm vendor/github.com/gotk3/gotk3/gtk/gtk_since_3_24.go
+	sed -i -e 's/!pango_1_42/!pango_1_40,!pango_1_42/g' vendor/github.com/gotk3/gotk3/pango/pango-attributes_since_1_44.go
 	PATH="/usr/lib/go-1.13/bin:${PATH}" GOCACHE="$(shell pwd)/build/" GOPATH="$(shell pwd)/build/" make BUILDFLAGS=-mod=vendor
 
 override_dh_auto_test:
